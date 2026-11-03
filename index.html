@@ -29,6 +29,58 @@
             height: 100dvh; 
         }
 
+        /* --- HIDDEN YOUTUBE PLAYER --- */
+        #youtube-audio {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        /* --- EXIT & AUDIO BUTTONS (TOP LEVEL) --- */
+        .top-btn {
+            position: fixed;
+            top: 20px;
+            z-index: 999999999; /* Highest Z-Index */
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffcdd2;
+            color: #e91e63;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background 0.2s, opacity 0.5s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .top-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .top-btn:active { transform: scale(0.9); }
+
+        #exit-btn {
+            left: 20px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            padding-bottom: 2px;
+        }
+
+        #audio-toggle {
+            right: 20px;
+        }
+
         /* --- START SCREEN --- */
         #start-screen {
             position: absolute;
@@ -270,25 +322,31 @@
             pointer-events: none;
         }
 
-        /* --- PRANK REVEAL MODAL --- */
-        #prank-modal {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
-            z-index: 10000; display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 1s ease; padding: 20px;
+        /* --- MODALS (Prank & Exit) --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px);
+            z-index: 1000000; /* Higher than phases */
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease; padding: 20px;
         }
 
-        #prank-modal.active { opacity: 1; pointer-events: auto; }
+        /* EXIT MODAL SPECIFIC OVERRIDE - MUST BE HIGHER THAN FINALE */
+        #exit-modal {
+            z-index: 999999999; 
+        }
 
-        .prank-content {
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
             background: #fff; padding: 20px; border-radius: 24px; max-width: 350px; width: 100%;
             text-align: center; transform: scale(0.8); transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center;
         }
 
-        #prank-modal.active .prank-content { transform: scale(1); }
+        .modal-overlay.active .modal-content { transform: scale(1); }
 
-        .prank-gif { width: 100%; border-radius: 16px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .prank-gif iframe { width: 100% !important; height: auto !important; aspect-ratio: 1/1; border: none; }
+        .modal-gif { width: 100%; border-radius: 16px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .modal-gif iframe { width: 100% !important; height: auto !important; aspect-ratio: 1/1; border: none; pointer-events: none; }
 
         .prank-text-container {
             max-height: 0; overflow: hidden; opacity: 0; transform: translateY(10px);
@@ -297,8 +355,19 @@
 
         .prank-text-container.show { max-height: 200px; opacity: 1; transform: translateY(0); }
 
-        .prank-text { font-family: 'Fredoka One', cursive; color: #333; font-size: 1.1rem; line-height: 1.5; margin-bottom: 10px; }
-        .prank-text span { color: #e91e63; }
+        .modal-text { font-family: 'Fredoka One', cursive; color: #333; font-size: 1.1rem; line-height: 1.5; margin-bottom: 10px; }
+        .modal-text span { color: #e91e63; }
+
+        /* Exit Modal Specific */
+        .exit-text { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-style: italic; color: #d81b60; margin-bottom: 20px; line-height: 1.4; }
+        .exit-btns { display: flex; gap: 15px; width: 100%; }
+        
+        .exit-btn-choice {
+            flex: 1; padding: 12px; border-radius: 20px; border: none; font-family: 'Fredoka One', cursive; font-size: 1rem; cursor: pointer; transition: transform 0.2s;
+        }
+        .exit-btn-choice:active { transform: scale(0.95); }
+        .btn-stay { background: linear-gradient(135deg, #ff8a65, #ff5252); color: white; box-shadow: 0 4px 10px rgba(255, 82, 82, 0.3); }
+        .btn-leave { background: #eceff1; color: #78909c; }
 
         /* --- PHASE 4: THE DOOR --- */
         #door-stage {
@@ -312,9 +381,7 @@
         #door-stage.active { opacity: 1; pointer-events: auto; }
 
         .door-wrapper {
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.3s ease;
+            position: relative; cursor: pointer; transition: transform 0.3s ease;
             animation: floatDoor 4s ease-in-out infinite alternate;
         }
 
@@ -325,51 +392,31 @@
             100% { transform: translateY(-10px); }
         }
 
-        /* The Normal (But Beautiful) Door */
         .door {
-            width: 240px;
-            height: 400px;
+            width: 240px; height: 400px;
             background: linear-gradient(to right, #f8bbd0, #f48fb1);
-            border-radius: 120px 120px 0 0; /* Arched top */
+            border-radius: 120px 120px 0 0;
             border: 8px solid #ffffff;
-            box-shadow: 
-                inset 0 0 20px rgba(0,0,0,0.1),
-                0 15px 35px rgba(0,0,0,0.15),
-                0 0 0 12px #ffcdd2;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 15px 35px rgba(0,0,0,0.15), 0 0 0 12px #ffcdd2;
+            position: relative; display: flex; justify-content: center; align-items: center;
         }
 
-        /* Door Panels */
         .door-panel {
-            position: absolute;
-            width: 80%;
-            height: 80%;
+            position: absolute; width: 80%; height: 80%;
             border: 3px solid rgba(255, 255, 255, 0.6);
             border-radius: 80px 80px 10px 10px;
             box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
-        /* Door Knob */
         .door-knob {
-            position: absolute;
-            right: 20px;
-            top: 55%;
-            width: 20px;
-            height: 20px;
+            position: absolute; right: 20px; top: 55%; width: 20px; height: 20px;
             background: radial-gradient(circle at 30% 30%, #fff59d, #fbc02d);
-            border-radius: 50%;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.3);
         }
 
         .door-hint {
-            margin-top: 30px;
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.2rem;
-            color: #d81b60;
-            animation: bounce 1.5s infinite;
+            margin-top: 30px; font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem; color: #d81b60; animation: bounce 1.5s infinite;
         }
 
         /* --- WHITE FLASH OVERLAY --- */
@@ -382,8 +429,7 @@
 
         /* --- PHASE 5: THE FINALE --- */
         #finale-stage {
-            position: fixed; inset: 0; z-index: 100000;
-            background: #fff0f5;
+            position: fixed; inset: 0; z-index: 100000; background: #fff0f5;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; pointer-events: none; transition: opacity 2s ease;
             padding: 20px; text-align: center;
@@ -392,71 +438,36 @@
         #finale-stage.active { opacity: 1; pointer-events: auto; }
 
         .finale-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(15px);
-            padding: 30px;
-            border-radius: 30px;
-            box-shadow: 0 20px 50px rgba(255, 182, 193, 0.4);
-            max-width: 450px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 2px solid #fff;
-            animation: gentleFloat 5s ease-in-out infinite alternate;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px);
+            padding: 30px; border-radius: 30px; box-shadow: 0 20px 50px rgba(255, 182, 193, 0.4);
+            max-width: 450px; width: 100%; display: flex; flex-direction: column; align-items: center;
+            border: 2px solid #fff; animation: gentleFloat 5s ease-in-out infinite alternate;
         }
 
         .finale-gif {
-            width: 100%;
-            max-width: 300px;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-            border: 4px solid #fff;
+            width: 100%; max-width: 300px; border-radius: 20px; overflow: hidden;
+            margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); border: 4px solid #fff;
         }
 
-        .finale-gif iframe {
-            width: 100% !important;
-            height: auto !important;
-            aspect-ratio: 1/1;
-            border: none;
-            pointer-events: none;
-        }
+        .finale-gif iframe { width: 100% !important; height: auto !important; aspect-ratio: 1/1; border: none; pointer-events: none; }
 
         .finale-text {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
-            font-style: italic;
-            color: #d81b60;
-            line-height: 1.5;
-            margin-bottom: 20px;
+            font-family: 'Playfair Display', serif; font-size: 1.4rem;
+            font-style: italic; color: #d81b60; line-height: 1.5; margin-bottom: 20px;
         }
 
-        .finale-sign {
-            font-family: 'Great Vibes', cursive;
-            font-size: 2.5rem;
-            color: #ff8a65;
-        }
+        .finale-sign { font-family: 'Great Vibes', cursive; font-size: 2.5rem; color: #ff8a65; }
 
         /* --- TYPOGRAPHY --- */
         .name-title {
-            font-family: 'Great Vibes', cursive;
-            font-size: clamp(2rem, 7vw, 3rem);
-            color: #d81b60;
-            margin: 0 0 10px 0;
-            text-shadow: 0 2px 10px rgba(216, 27, 96, 0.15);
-            line-height: 1.1;
-            text-align: center;
+            font-family: 'Great Vibes', cursive; font-size: clamp(2rem, 7vw, 3rem);
+            color: #d81b60; margin: 0 0 10px 0; text-shadow: 0 2px 10px rgba(216, 27, 96, 0.15);
+            line-height: 1.1; text-align: center;
         }
 
         .main-message {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(0.95rem, 3.5vw, 1.1rem);
-            line-height: 1.6;
-            color: #2c2c2c; 
-            margin: 0;
-            font-style: italic;
+            font-family: 'Playfair Display', serif; font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+            line-height: 1.6; color: #2c2c2c; margin: 0; font-style: italic;
         }
 
         .main-message p { margin-top: 0; margin-bottom: 15px; }
@@ -476,6 +487,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+
+    <!-- HIDDEN YOUTUBE AUDIO PLAYER -->
+    <div id="youtube-audio">
+        <iframe 
+            id="yt-player"
+            width="1" 
+            height="1" 
+            src="https://www.youtube.com/embed/PpLJonoxbyQ?start=40&autoplay=1&mute=1&loop=1&playlist=PpLJonoxbyQ&controls=0&showinfo=0&rel=0&enablejsapi=1" 
+            frameborder="0" 
+            allow="autoplay; encrypted-media" 
+            allowfullscreen>
+        </iframe>
+    </div>
+
+    <!-- Top Buttons -->
+    <button id="exit-btn" class="top-btn">✕</button>
+    <button id="audio-toggle" class="top-btn">🔇</button>
 
     <!-- Start Screen -->
     <div id="start-screen">
@@ -551,14 +579,13 @@
     </div>
 
     <!-- The Prank Modal -->
-    <div id="prank-modal">
-        <div class="prank-content">
-            <div class="prank-gif">
+    <div id="prank-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-gif">
                 <iframe src="https://giphy.com/embed/ctYt1iImGI71RwUIQO" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
             </div>
-            
             <div class="prank-text-container" id="prankTextContainer">
-                <div class="prank-text">
+                <div class="modal-text">
                     Got you, chemical girly! <span>Just kidding</span>, I didn't actually take any photos since you didn't let me. But damn, I definitely gave you a little heart attack there, <span>HAHAHAHAHA!</span>
                 </div>
             </div>
@@ -589,6 +616,22 @@
                 "A physical one is better... but we will get there someday."
             </div>
             <div class="finale-sign">Always, Yours.</div>
+        </div>
+    </div>
+
+    <!-- The Exit Confirmation Modal (Z-Index Fixed) -->
+    <div id="exit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-gif">
+                <iframe src="https://giphy.com/embed/jJLx2THmQdv5Ra0v4V" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+            </div>
+            <div class="exit-text">
+                Are you sure?<br>You don't wanna listen to my music? 🥺
+            </div>
+            <div class="exit-btns">
+                <button class="exit-btn-choice btn-stay" id="btn-stay">I'll stay</button>
+                <button class="exit-btn-choice btn-leave" id="btn-leave">Leave</button>
+            </div>
         </div>
     </div>
 
@@ -626,6 +669,55 @@
 
         const clickDoor = document.getElementById('clickDoor');
         const whiteFlash = document.getElementById('white-flash');
+
+        // --- YOUTUBE AUDIO CONTROLS ---
+        const ytPlayer = document.getElementById('yt-player');
+        const audioToggle = document.getElementById('audio-toggle');
+        const exitBtn = document.getElementById('exit-btn');
+        const exitModal = document.getElementById('exit-modal');
+        const btnStay = document.getElementById('btn-stay');
+        const btnLeave = document.getElementById('btn-leave');
+        
+        let isMuted = true; 
+
+        function toggleMute() {
+            if (isMuted) {
+                ytPlayer.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+                audioToggle.innerText = '🔊';
+                isMuted = false;
+            } else {
+                ytPlayer.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+                audioToggle.innerText = '🔇';
+                isMuted = true;
+            }
+        }
+
+        audioToggle.addEventListener('click', toggleMute);
+
+        // --- EXIT MODAL LOGIC (NOW FULLY PERSISTENT) ---
+        exitBtn.addEventListener('click', () => {
+            exitModal.classList.add('active');
+            if(!isMuted) {
+                ytPlayer.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+                audioToggle.innerText = '🔇';
+                isMuted = true;
+            }
+        });
+
+        btnStay.addEventListener('click', () => {
+            exitModal.classList.remove('active');
+            // Unmute again if she stays
+            if(isMuted) {
+                ytPlayer.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+                audioToggle.innerText = '🔊';
+                isMuted = false;
+            }
+        });
+
+        btnLeave.addEventListener('click', () => {
+            exitModal.classList.remove('active');
+            document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#555;">You left the page. Goodbye! 👋</div>';
+        });
 
         // --- FLOWER PATTERNS ---
         function getRandomFlowerSVG(size, colors) {
@@ -696,6 +788,12 @@
             startScreen.style.opacity = '0';
             setTimeout(() => startScreen.remove(), 800);
             
+            // Show the audio controls
+            setTimeout(() => {
+                audioToggle.classList.add('visible');
+                exitBtn.classList.add('visible');
+            }, 1000);
+
             for(let i=0; i<10; i++) setTimeout(spawnFlower, i * 100);
             const flowerInterval = setInterval(spawnFlower, 200);
 
@@ -724,44 +822,35 @@
             setTimeout(() => { phase3.classList.add('active'); }, 600); 
         });
 
-        // --- PRANK SEQUENCE (5 SECOND DELAY) ---
+        // --- PRANK SEQUENCE ---
         clickPin.addEventListener('click', () => {
             clickHint.style.display = 'none'; 
             
             prankTextContainer.classList.remove('show');
             prankModal.classList.add('active');
             
-            // Wait 3.5s for GIF, then show text
             setTimeout(() => {
                 prankTextContainer.classList.add('show');
                 
-                // Wait exactly 5 seconds AFTER text is shown, then fade out
                 setTimeout(() => {
                     prankModal.classList.remove('active');
                     
-                    // Wait 1.5s for modal fade, then show door
                     setTimeout(() => {
                         doorStage.classList.add('active');
                     }, 1500);
 
-                }, 10000); // 5 seconds display time for prank text
+                }, 8000); // Prank stays for 8 seconds
             }, 3500); 
         });
 
         // --- DOOR CLICK & WHITE FLASH ---
         clickDoor.addEventListener('click', () => {
-            // 1. Trigger the white flash
             whiteFlash.classList.add('active');
             
-            // 2. Wait for the flash to cover the screen (0.8s)
             setTimeout(() => {
-                // Hide the door stage
                 doorStage.classList.remove('active');
-                
-                // Show the finale
                 finaleStage.classList.add('active');
                 
-                // Wait a tiny bit, then fade out the white flash to reveal the ending
                 setTimeout(() => {
                     whiteFlash.classList.remove('active');
                 }, 500);
